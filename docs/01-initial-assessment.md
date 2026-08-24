@@ -14,6 +14,8 @@ The laptop successfully powered on during the initial assessment.
 
 During the initial boot test, the system did not boot into an operating system. Instead, it attempted an EFI PXE network boot over IPv6, which failed.
 
+![EFI PXE IPv6 boot failure](../images/01-pxe-boot-failure.jpg)
+
 ## Initial Observations
 
 The PXE boot attempt suggests that the system did not locate a usable local boot device before attempting to boot from the network.
