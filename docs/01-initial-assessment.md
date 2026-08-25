@@ -66,6 +66,11 @@ The following SATA ports were reported as:
 - SATA Port 1: Not Present
 - SATA Port 4: Not Present
 
+![BIOS showing no detected SATA storage](../images/02-bios-storage-not-present.jpg)
+
+*Figure 2 - BIOS/UEFI Main screen showing no storage devices detected on SATA Port 1 or SATA Port 4.*
+
+
 The OffBoard SATA Controller Configuration and OffBoard NVMe Controller Configuration were also inspected.
 
 No storage devices were reported as present in either configuration.
