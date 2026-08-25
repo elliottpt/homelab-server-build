@@ -129,3 +129,139 @@ The inspection will determine:
 - What type of replacement storage would be required if no drive is installed
 
 No replacement storage will be purchased until the laptop's internal storage configuration has been physically confirmed.
+
+## Stage 3 - Physical Hardware Inspection and Test Drive Verification
+
+Following the BIOS and storage diagnostics, the laptop was physically inspected to determine whether an internal storage device was installed and whether the available storage interfaces appeared usable.
+
+### Physical Inspection
+
+The laptop was completely powered down and disconnected from external power and peripherals before the bottom cover was removed.
+
+A visual inspection of the internal hardware confirmed that no storage device was installed in the available internal storage locations.
+
+The inspection identified:
+
+- An empty 2.5-inch SATA storage bay
+- SATA data and power connection hardware present
+- No installed M.2/NVMe SSD
+- Two Corsair Vengeance DDR4 memory modules
+- Dual cooling fans and heatpipe assembly
+- No obvious signs of major physical damage
+- Only minor visible dust accumulation
+
+The SATA connector and associated cabling were visually inspected and showed no obvious signs of damage.
+
+![Internal hardware inspection](../images/03-internal-hardware-inspection.jpg)
+
+*Figure 3 - Internal view of the laptop showing the motherboard, cooling system, 64 GB DDR4 memory and empty internal storage locations.*
+
+A closer inspection of the 2.5-inch SATA connection confirmed that the combined SATA data and power connector was present.
+
+![SATA connector inspection](../images/04-sata-connector.jpg)
+
+*Figure 4 - Close-up of the empty 2.5-inch SATA storage connection. The connector and cabling showed no obvious signs of physical damage.*
+
+### Known-Good SATA SSD Test
+
+Before purchasing replacement storage, a spare Kingston 240 GB 2.5-inch SATA SSD was used to test the laptop's storage interface.
+
+The spare SSD was physically compatible with the laptop's SATA connection and storage bay.
+
+The SSD contained an existing Pop!_OS Linux installation.
+
+After installing the SSD, the laptop initially displayed a boot failure before subsequently locating the drive and successfully booting into Pop!_OS.
+
+This demonstrated that the laptop was capable of:
+
+- Detecting the SATA SSD
+- Reading data from the drive
+- Loading an existing bootloader
+- Starting a Linux operating system
+- Reaching a functioning desktop environment
+
+This strongly supports the conclusion that the original boot problem was caused by the absence of an internal storage device rather than a failed SATA controller or motherboard fault.
+
+### Linux Hardware Verification
+
+The existing Pop!_OS installation was then used as a temporary diagnostic environment.
+
+Several standard Linux commands were used to verify that the operating system could correctly detect the main hardware components.
+
+#### CPU Verification
+
+The `lscpu` command reported:
+
+- Architecture: x86_64
+- CPU: Intel Core i7-10750H @ 2.60 GHz
+- 6 physical CPU cores
+- 12 logical processors/threads
+- Intel VT-x virtualisation support
+
+The presence of VT-x is particularly useful for the planned homelab because the server will later be used to host virtual machines.
+
+![CPU verification](../images/05-lscpu-output.jpg)
+
+*Figure 5 - Linux `lscpu` output confirming the Intel Core i7-10750H, 6-core/12-thread configuration and VT-x virtualisation support.*
+
+#### Memory Verification
+
+The `free -h` command reported approximately 62 GiB of usable system memory.
+
+This is consistent with the 64 GB of installed DDR4 memory identified during the physical inspection and in the BIOS.
+
+#### Storage Verification
+
+The `lsblk` command detected the temporary Kingston SSD as:
+
+- Device: `sda`
+- Usable capacity: approximately 223.6 GiB
+
+The drive contained an existing Pop!_OS installation with EFI, recovery, root and encrypted swap partitions.
+
+This further confirmed that the SATA storage connection was functioning correctly.
+
+#### PCI Hardware Verification
+
+The `lspci` command successfully enumerated several major system devices, including:
+
+- Intel chipset and PCI controllers
+- Intel Wi-Fi 6 AX200 wireless adapter
+- Realtek PCIe Gigabit Ethernet controller
+- NVIDIA GeForce GTX 1650 Ti Mobile GPU
+- USB controllers
+- Audio devices
+- Other PCI-connected system hardware
+
+![Linux hardware verification](../images/06-linux-hardware-verification.jpg)
+
+*Figure 6 - Linux hardware verification showing memory, storage and PCI device detection using `free -h`, `lsblk` and `lspci`.*
+
+### Diagnostic Conclusion
+
+Stage 3 confirmed that the laptop's core hardware is functioning sufficiently to continue with the homelab project.
+
+The investigation established that:
+
+- The laptop originally contained no internal storage device.
+- The SATA storage bay and connector are present.
+- The SATA interface successfully detects and boots from a known-good SSD.
+- The motherboard, CPU and memory are functioning sufficiently to run Linux.
+- Approximately 64 GB of RAM is available.
+- The Intel Core i7-10750H provides 6 cores and 12 threads.
+- Intel VT-x virtualisation support is available.
+- Gigabit Ethernet and Wi-Fi hardware are detected.
+- The NVIDIA GPU is detected.
+- No major hardware fault has been identified during the initial assessment.
+
+The original EFI PXE boot failure can therefore be explained by the absence of an installed local storage device. With no bootable local drive available, the firmware fell back to attempting a network boot.
+
+### Next Steps
+
+Before replacing the existing Pop!_OS installation, a small number of additional health checks will be performed, including storage health and system temperature checks.
+
+Provided those checks do not identify any significant problems, the temporary 240 GB SATA SSD will be used to continue the project.
+
+The next major stage will be the installation and initial configuration of the Linux server operating system.
+
+A larger SATA SSD may be installed later when additional storage capacity is required.
