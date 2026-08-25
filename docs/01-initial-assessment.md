@@ -16,6 +16,8 @@ During the initial boot test, the system did not boot into an operating system. 
 
 ![EFI PXE IPv6 boot failure](../images/01-pxe-boot-failure.jpg)
 
+*Figure 1 - Initial boot attempt showing the system falling back to an EFI PXE network boot after failing to locate a usable local boot device.*
+
 ## Initial Observations
 
 The PXE boot attempt suggests that the system did not locate a usable local boot device before attempting to boot from the network.
