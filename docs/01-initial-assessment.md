@@ -262,6 +262,173 @@ Before replacing the existing Pop!_OS installation, a small number of additional
 
 Provided those checks do not identify any significant problems, the temporary 240 GB SATA SSD will be used to continue the project.
 
-The next major stage will be the installation and initial configuration of the Linux server operating system.
-
 A larger SATA SSD may be installed later when additional storage capacity is required.
+
+
+## Stage 4 - Operating System Update and SSD Health Validation
+
+Following the successful installation and boot of the temporary Kingston 240 GB SATA SSD, additional checks were performed before proceeding with the server installation.
+
+The purpose of this stage was to ensure that the existing Pop!_OS installation was sufficiently up to date for further diagnostic work and to assess the health and reliability of the temporary SSD.
+
+### Operating System Update
+
+The existing Pop!_OS installation on the SSD had not been used or updated for approximately one year.
+
+Before relying on the operating system for further hardware diagnostics, the installed software and packages were updated.
+
+During the upgrade process, `dpkg` reported errors involving the following System76 DKMS packages:
+
+- `system76-dkms`
+- `system76-acpi-dkms`
+
+The incomplete package configuration was investigated using:
+
+```bash
+sudo dpkg --configure -a
+```
+
+The resulting output showed that the System76 DKMS modules were encountering errors while attempting to build against an installed Linux kernel.
+
+DKMS (Dynamic Kernel Module Support) is used to automatically rebuild third-party kernel modules when Linux kernels are installed or updated. This allows modules such as hardware drivers to remain compatible following kernel updates.
+
+To determine which Linux kernel was currently running, the following command was used:
+
+```bash
+uname -r
+```
+
+Before rebooting, the system reported:
+
+```text
+6.0.2-76060002-generic
+```
+
+The software update had installed a newer Linux kernel, but the operating system was still running the older kernel already loaded into memory.
+
+The laptop was therefore rebooted and the kernel version checked again.
+
+Following the reboot, `uname -r` returned:
+
+```text
+7.1.1-76070101-generic
+```
+
+This confirmed that the laptop successfully booted using the newly installed Linux kernel.
+
+Although the system successfully booted into the newer kernel, the earlier System76 DKMS package errors were noted rather than treated as fully resolved, as successful booting alone does not confirm that both packages subsequently configured without error.
+
+### Installing SMART Diagnostic Tools
+
+With the updated Pop!_OS environment successfully booting, the next step was to assess the health of the temporary Kingston 240 GB SATA SSD.
+
+The `smartmontools` package was installed using:
+
+```bash
+sudo apt install smartmontools
+```
+
+This package provides the `smartctl` utility, which can retrieve SMART (Self-Monitoring, Analysis and Reporting Technology) information recorded internally by compatible storage devices.
+
+The SSD's SMART information was retrieved using:
+
+```bash
+sudo smartctl -a /dev/sda
+```
+
+The overall SMART health assessment reported:
+
+```text
+PASSED
+```
+
+The overall PASS result was not treated as sufficient evidence by itself. Additional SMART attributes and the drive's recorded history were reviewed for possible signs of wear, communication problems or storage failure.
+
+### SMART Health Results
+
+The SMART information showed the following notable results:
+
+- Overall SMART health assessment: **PASSED**
+- Power-on time: approximately **2,121 hours**
+- Power cycle count: approximately **2,279**
+- Operating temperature: approximately **32°C**
+- Reported uncorrectable errors: **0**
+- Reallocated events observed: **0**
+- SATA physical/communication errors observed: **0**
+- SSD life indicator: approximately **96%**
+- SMART error log: **No Errors Logged**
+- Unsafe shutdown count: **17**
+
+The historical unsafe shutdown count was noted. However, the remaining SMART information did not indicate a current storage fault.
+
+The drive showed a high remaining life indicator, no significant error history and no evidence of communication problems with the laptop's SATA interface.
+
+### SMART Short Self-Test
+
+In addition to reviewing the SSD's recorded SMART information, the drive's built-in short self-test was performed.
+
+The test was started using:
+
+```bash
+sudo smartctl -t short /dev/sda
+```
+
+The SSD reported that the test would require approximately two minutes to complete.
+
+After allowing the test to finish, the SMART self-test log was retrieved using:
+
+```bash
+sudo smartctl -l selftest /dev/sda
+```
+
+The result was:
+
+```text
+# 1  Short offline  Completed without error  00%  2121  -
+```
+
+The `00%` value represents the percentage of the test remaining and therefore indicates that the diagnostic completed fully.
+
+The key result was:
+
+```text
+Completed without error
+```
+
+This confirmed that the SSD successfully completed its internal short diagnostic without identifying an error.
+
+![SMART short self-test result](../images/07-smart-short-self-test.jpg)
+
+*Figure 7 - SMART short self-test result for the temporary Kingston 240 GB SATA SSD, confirming that the diagnostic completed without error.*
+
+### Stage 4 Diagnostic Conclusion
+
+The temporary Kingston 240 GB SATA SSD successfully passed both its SMART health assessment and its built-in short self-test.
+
+The assessment established that:
+
+- The SSD passes its overall SMART health assessment.
+- The SMART short self-test completed without error.
+- No reported uncorrectable errors were identified.
+- No significant reallocation activity was identified.
+- No SATA communication errors were identified.
+- No errors were recorded in the SMART error log.
+- The drive operated at a normal temperature during testing.
+- The SSD reported approximately 96% remaining life.
+- The laptop successfully boots and operates using the updated Linux kernel.
+
+No significant evidence of an active SSD fault was identified.
+
+The temporary Kingston 240 GB SATA SSD is therefore considered suitable for continued use during the initial homelab server build.
+
+The primary limitation of the drive is its capacity rather than its current health. The 240 GB SSD is sufficient for the initial server installation and early homelab work, but additional storage may eventually be required as the environment expands to include virtual machines, containers, snapshots, backups and other services.
+
+### Next Steps
+
+With the temporary SSD validated, the remaining initial hardware checks will focus on system stability and functionality, including:
+
+- System temperature monitoring
+- Network interface testing
+- Basic stability testing
+
+Once these checks are complete and no significant hardware problems have been identified, the initial system assessment can be concluded and the project can proceed to installation and configuration of the server operating system.
