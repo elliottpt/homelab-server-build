@@ -432,3 +432,240 @@ With the temporary SSD validated, the remaining initial hardware checks will foc
 - Basic stability testing
 
 Once these checks are complete and no significant hardware problems have been identified, the initial system assessment can be concluded and the project can proceed to installation and configuration of the server operating system.
+
+
+# Stage 5 - System Stability, Thermal and Memory Validation
+
+Following the storage-health assessment, additional testing was performed to determine whether the laptop remained stable under load and whether its cooling system and installed memory were suitable for continued use as a homelab server.
+
+This testing was also intended to determine whether the previously suspected but undocumented hardware instability could be reproduced before replacing the existing diagnostic operating system.
+
+Stage 5 remains in progress. The thermal, CPU stability and memory validation portions have now been completed.
+
+---
+
+## Idle Thermal Assessment
+
+The system's hardware temperature sensors were inspected using:
+
+```bash
+sensors
+```
+
+At idle, the system reported approximately:
+
+- CPU package: 33°C
+- CPU cores: 32-33°C
+- Memory modules: 29-30°C
+- Wi-Fi adapter: 30°C
+- Platform Controller Hub (PCH): 41°C
+- ACPI thermal zone: 34°C
+
+The CPU reported a critical temperature threshold of 100°C.
+
+Some memory sensor entries displayed 0°C alarm thresholds. These values were inconsistent with the actual memory temperatures and were therefore treated as malformed or unavailable threshold information rather than evidence of a thermal problem.
+
+The observed idle temperatures were low and showed no indication of abnormal heat generation.
+
+**Result: PASS - no thermal concern identified at idle.**
+
+![Idle thermal baseline](../images/08-idle-thermal-baseline.jpg)
+
+*Figure 8 - Idle hardware temperature readings collected before controlled load testing.*
+
+---
+
+## Controlled CPU Stress and Stability Test
+
+To test system behaviour under sustained CPU load, the availability of `stress-ng` was first checked using:
+
+```bash
+command -v stress-ng
+```
+
+No installed executable was returned, so the utility was installed using:
+
+```bash
+sudo apt install stress-ng
+```
+
+A five-minute CPU stress test was then performed:
+
+```bash
+stress-ng --cpu 0 --timeout 5m --metrics-brief
+```
+
+The options used performed the following functions:
+
+- `--cpu 0` - use all available logical CPUs
+- `--timeout 5m` - automatically stop the test after five minutes
+- `--metrics-brief` - provide a summary when the test completes
+
+The Intel Core i7-10750H contains six physical CPU cores and twelve logical processors through Hyper-Threading.
+
+`stress-ng` therefore dispatched twelve CPU workers.
+
+Temperatures were monitored separately during the test using:
+
+```bash
+watch -n 2 sensors
+```
+
+The stress test completed its full five-minute duration successfully.
+
+The final output reported that twelve CPU workers had been dispatched and that the test completed successfully after approximately 300 seconds.
+
+During the test, the observed CPU temperature peaked at approximately 82°C.
+
+This remained below the CPU's reported 100°C critical temperature threshold.
+
+No system crash, freeze, unexpected shutdown or other visible instability occurred during the test.
+
+**Result: PASS - the system completed a five-minute all-thread CPU stress test without reproduced instability or excessive observed temperature.**
+
+![CPU stress test complete](../images/09-cpu-stress-test-complete.jpg)
+
+*Figure 9 - Successful completion of the five-minute `stress-ng` CPU stability test.*
+
+---
+
+## Memory Detection Verification
+
+Memory availability was checked using:
+
+```bash
+free -h
+```
+
+The operating system reported:
+
+```text
+              total    used    free    shared    buff/cache    available
+Mem:           62Gi    3.5Gi    56Gi     197Mi       2.8Gi         55Gi
+Swap:          19Gi       0B    19Gi
+```
+
+This confirmed approximately:
+
+- Total usable memory: 62 GiB
+- Used memory at the time of inspection: 3.5 GiB
+- Free memory: 56 GiB
+- Available memory: 55 GiB
+- Swap: 19 GiB
+
+The approximately 62 GiB of usable memory is consistent with the laptop's installed 64 GB of DDR4 RAM, allowing for differences in memory measurement and memory reserved by the system.
+
+**Result: PASS - the installed 64 GB of RAM is being detected correctly by the operating system.**
+
+---
+
+## Memory Integrity Test
+
+Correct memory detection does not by itself establish that the installed RAM is operating reliably.
+
+A memory integrity test was therefore performed.
+
+The availability of `memtester` was first checked using:
+
+```bash
+command -v memtester
+```
+
+As the utility was not installed, it was installed using:
+
+```bash
+sudo apt install memtester
+```
+
+A 50 GB memory test was then started using:
+
+```bash
+sudo memtester 50G 1
+```
+
+The command instructed `memtester` to test 50 GB of memory for one complete pass.
+
+Testing 50 GB allowed a large majority of the available physical memory to be exercised while leaving sufficient memory available for the running operating system and diagnostic environment.
+
+`memtester` successfully allocated and locked:
+
+```text
+51200MB
+53687091200 bytes
+```
+
+The test then completed one full loop.
+
+The completed test patterns included:
+
+- Stuck Address
+- Random Value
+- Compare XOR
+- Compare SUB
+- Compare MUL
+- Compare DIV
+- Compare OR
+- Compare AND
+- Sequential Increment
+- Solid Bits
+- Block Sequential
+- Checkerboard
+- Bit Spread
+- Bit Flip
+- Walking Ones
+- Walking Zeroes
+- 8-bit Writes
+- 16-bit Writes
+
+Every displayed test completed with an `ok` result.
+
+The utility subsequently displayed:
+
+```text
+Done.
+```
+
+and returned normally to the shell.
+
+No memory errors were reported, and the system did not crash, freeze or display any other visible instability during the test.
+
+Because `memtester` operates from within the running operating system, it does not test literally every physical memory address. However, successfully exercising 50 GB of the installed memory provides substantial evidence that the RAM is functioning reliably for the purposes of the current hardware assessment.
+
+**Result: PASS - 50 GB of RAM completed one full `memtester` integrity test without detected errors.**
+
+---
+
+## Stage 5 Progress Summary
+
+The following Stage 5 validation has now been completed:
+
+| Test | Result |
+| --- | --- |
+| Idle thermal validation | **PASS** |
+| CPU stress and stability test | **PASS** |
+| RAM detection | **PASS** |
+| 50 GB RAM integrity test | **PASS** |
+| Battery and power assessment | **IN PROGRESS** |
+| Wi-Fi validation | **NOT YET TESTED** |
+| Ethernet validation | **NOT YET TESTED** |
+
+The completed testing has not reproduced the previously suspected hardware instability.
+
+So far, the laptop has demonstrated:
+
+- Normal idle operating temperatures
+- Stable operation under full CPU load
+- An observed CPU peak of approximately 82°C during the five-minute stress test
+- Correct detection of the installed 64 GB of RAM
+- Successful integrity testing of 50 GB of memory
+- No crashes, freezes or unexpected shutdowns during the completed stability tests
+
+These results provide additional evidence that the machine is suitable for continued assessment and potential homelab deployment.
+
+They do not establish that every component is fault-free or guarantee future reliability.
+
+The appropriate conclusion at the current stage is therefore:
+
+> **No corresponding hardware instability has been reproduced during the thermal, CPU and memory validation performed so far.**
+
+Stage 5 will continue with battery/power validation followed by Wi-Fi and Gigabit Ethernet testing before the initial hardware assessment is closed.
