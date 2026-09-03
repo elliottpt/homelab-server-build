@@ -645,7 +645,7 @@ The following Stage 5 validation has now been completed:
 | CPU stress and stability test | **PASS** |
 | RAM detection | **PASS** |
 | 50 GB RAM integrity test | **PASS** |
-| Battery and power assessment | **IN PROGRESS** |
+| Battery and power assessment | **PASS** |
 | Wi-Fi validation | **NOT YET TESTED** |
 | Ethernet validation | **NOT YET TESTED** |
 
@@ -669,3 +669,137 @@ The appropriate conclusion at the current stage is therefore:
 > **No corresponding hardware instability has been reproduced during the thermal, CPU and memory validation performed so far.**
 
 Stage 5 will continue with battery/power validation followed by Wi-Fi and Gigabit Ethernet testing before the initial hardware assessment is closed.
+
+### Battery and Power Validation
+
+The internal battery was originally considered unnecessary because the finished server is expected to operate primarily from AC power. However, this decision was reconsidered because a healthy laptop battery can provide useful temporary backup power during a mains interruption.
+
+Retaining the battery could allow the server to remain operational during short outages or provide sufficient time for a controlled shutdown rather than experiencing an abrupt loss of power.
+
+Battery health, physical condition and power-transfer behaviour were therefore added to the hardware assessment.
+
+#### Battery Capacity and Telemetry
+
+Linux exposed the internal battery at:
+
+`/sys/class/power_supply/BAT0/`
+
+Battery information was examined using:
+
+`cat /sys/class/power_supply/BAT0/charge_full`
+
+`cat /sys/class/power_supply/BAT0/charge_full_design`
+
+`cat /sys/class/power_supply/BAT0/status`
+
+`cat /sys/class/power_supply/BAT0/capacity`
+
+`cat /sys/class/power_supply/BAT0/cycle_count`
+
+`cat /sys/class/power_supply/BAT0/voltage_now`
+
+The following values were reported:
+
+- `charge_full`: 3,099,000
+- `charge_full_design`: 3,175,000
+- `status`: Full
+- `capacity`: 100%
+- `cycle_count`: 0
+- `voltage_now`: 17,012,000 microvolts
+
+Comparing the reported full-charge capacity with the original design capacity gives an estimated capacity retention of approximately **97.6%**, representing approximately **2.4% reported capacity loss**.
+
+The reported voltage corresponds to approximately **17.01 V**, which was consistent with the earlier `sensors` reading of approximately 17.02 V.
+
+The reported cycle count of `0` was not interpreted as proof that the battery has never been cycled. The hardware may simply not expose meaningful cycle-count information through this Linux interface.
+
+#### Physical Battery Inspection
+
+The battery had previously been visible during the internal hardware inspection performed when the temporary SATA SSD was installed.
+
+No visible swelling, deformation, leakage or other obvious physical damage was observed.
+
+**Battery physical condition: PASS**
+
+#### AC Power and Battery Transfer Test
+
+AC power detection was checked using:
+
+`cat /sys/class/power_supply/AC/online`
+
+With AC connected, the system reported:
+
+`1`
+
+The charger was then disconnected while the laptop remained powered on and idle.
+
+The system continued operating normally. AC status changed to:
+
+`0`
+
+Battery status changed to:
+
+`Discharging`
+
+During the short test, reported battery capacity decreased from 100% to approximately 96%.
+
+The charger was then reconnected.
+
+AC status returned to:
+
+`1`
+
+Battery status changed to:
+
+`Charging`
+
+No crash, freeze, unexpected shutdown or other abnormal behaviour occurred during either power transition.
+
+**AC-loss and battery-transfer test: PASS**
+
+#### Charge-Limit Investigation
+
+Because the server may eventually operate continuously from AC power, standard Linux battery charge-limit support was investigated using:
+
+`ls /sys/class/power_supply/BAT0/ | grep threshold`
+
+No output was returned.
+
+Standard Linux charge-control threshold files are therefore not currently exposed through the BAT0 interface by the installed firmware/driver combination.
+
+This does not establish that charge limiting is impossible on this hardware. Charge-limit support will be investigated again after installation of the final server operating system, including any appropriate hardware-specific Linux driver support.
+
+#### Battery Assessment Conclusion
+
+The battery currently reports approximately **97.6% of its original design capacity**, showed no obvious physical damage during inspection, successfully powered the laptop when AC power was removed, and resumed charging normally when AC power was restored.
+
+The internal battery will therefore be **retained in the server build**.
+
+Although it is not a substitute for a managed UPS, it provides useful short-duration backup power and could later be combined with battery monitoring and an automated graceful-shutdown mechanism.
+
+Update  01-initial-assessment.mdUpdate  01-initial-assessment.md**Battery and power validation: PASS**
+
+
+Stage 5 will continue with Wi-Fi and Gigabit Ethernet testing before the initial hardware assessment is closed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
