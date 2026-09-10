@@ -783,7 +783,165 @@ Update  01-initial-assessment.mdUpdate  01-initial-assessment.md**Battery and po
 Stage 5 will continue with Wi-Fi and Gigabit Ethernet testing before the initial hardware assessment is closed.
 
 
+### Wi-Fi Validation — PASS
 
+The laptop's Intel Wi-Fi adapter was tested to confirm that the wireless interface was detected correctly, associated with the local network, received valid network configuration, and could communicate reliably with both the local gateway and the wider internet.
+
+The wireless interface was first identified using:
+
+```bash
+ip link
+```
+
+The system reported the wireless interface as:
+
+```text
+wlp11s0
+```
+
+The interface was then inspected directly:
+
+```bash
+ip link show wlp11s0
+```
+
+The interface reported `UP` and `LOWER_UP`, confirming that it was enabled and operational at the link level.
+
+NetworkManager status was checked using:
+
+```bash
+nmcli device status
+```
+
+This showed `wlp11s0` connected to the wireless network `Zyxel_71E4`.
+
+IPv4 configuration was then checked with:
+
+```bash
+ip addr show wlp11s0
+```
+
+The interface had received the following IPv4 address:
+
+```text
+192.168.1.230/24
+```
+
+The address was reported as dynamic, indicating that it had been assigned through the network's DHCP configuration.
+
+The routing table was inspected using:
+
+```bash
+ip route
+```
+
+The default gateway was identified as:
+
+```text
+192.168.1.1
+```
+
+Local gateway connectivity was tested with:
+
+```bash
+ping -c 4 192.168.1.1
+```
+
+Results:
+
+- 4 packets transmitted
+- 4 packets received
+- 0% packet loss
+- Average round-trip latency: approximately 2.01 ms
+
+This confirmed reliable communication between the laptop and the local router.
+
+Internet connectivity was then tested independently of DNS by pinging the public address `1.1.1.1`:
+
+```bash
+ping -c 4 1.1.1.1
+```
+
+Results:
+
+- 4 packets transmitted
+- 4 packets received
+- 0% packet loss
+- Minimum latency: 8.461 ms
+- Average latency: 9.626 ms
+- Maximum latency: 11.513 ms
+- mdev: 1.146 ms
+
+This confirmed that the laptop could successfully route traffic beyond the local network.
+
+DNS resolution was tested separately by using a hostname rather than a numerical IP address:
+
+```bash
+ping -c 4 www.google.com
+```
+
+The hostname successfully resolved to `142.251.151.119`.
+
+Results:
+
+- 4 packets transmitted
+- 4 packets received
+- 0% packet loss
+- Minimum latency: 10.057 ms
+- Average latency: 11.414 ms
+- Maximum latency: 12.730 ms
+- mdev: 1.050 ms
+
+This confirmed that DNS resolution and external hostname connectivity were functioning correctly.
+
+The `iw` wireless diagnostic utility was not initially installed. It was added using:
+
+```bash
+sudo apt install iw
+```
+
+The active wireless link was then inspected using:
+
+```bash
+iw dev wlp11s0 link
+```
+
+Reported link information included:
+
+```text
+SSID: Zyxel_71E4
+Frequency: 2472 MHz
+Signal: -43 dBm
+RX bitrate: 137.6 MBit/s
+TX bitrate: 117.0 MBit/s
+```
+
+The 2472 MHz frequency confirms that the connection was operating on the 2.4 GHz band. A signal level of approximately -43 dBm represents a strong wireless signal. The reported HE link parameters are consistent with an 802.11ax / Wi-Fi 6 connection.
+
+The RX and TX bitrate values represent the negotiated wireless link rate at the time of testing and should not be interpreted as guaranteed internet throughput.
+
+#### Wi-Fi Validation Result
+
+| Test | Result |
+|---|---|
+| Wireless interface detected | **PASS** |
+| Interface operational | **PASS** |
+| Wi-Fi association | **PASS** |
+| IPv4/DHCP configuration | **PASS** |
+| Default route | **PASS** |
+| Local gateway connectivity | **PASS** |
+| Internet connectivity | **PASS** |
+| DNS resolution | **PASS** |
+| Packet loss | **0%** |
+| Wireless signal strength | **PASS — -43 dBm** |
+
+**Overall result: PASS**
+
+The Intel wireless adapter is detected correctly, maintains a strong connection to the local access point, receives valid network configuration, and provides reliable local-network, internet and DNS connectivity.
+
+### Next Step
+
+The remaining networking validation is the laptop's Realtek Gigabit Ethernet interface. Ethernet testing will include physical link detection, negotiated link speed, DHCP/IP configuration, gateway connectivity, internet connectivity and DNS resolution.
 
 
 
