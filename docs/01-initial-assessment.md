@@ -1,4 +1,4 @@
-# Initial System Assessment
+networkingnetworking# Initial System Assessment
 
 ## Project Background
 
@@ -943,6 +943,28 @@ The Intel wireless adapter is detected correctly, maintains a strong connection 
 
 The remaining networking validation is the laptop's Realtek Gigabit Ethernet interface. Ethernet testing will include physical link detection, negotiated link speed, DHCP/IP configuration, gateway connectivity, internet connectivity and DNS resolution.
 
+
+Stage 5: Network Validation — Wi-Fi
+
+Wi-Fi/basic network validation completed successfully on the Pop!_OS homelab laptop.
+
+Interface: wlp11s0
+IPv4 address: 192.168.1.230/24
+Default gateway: 192.168.1.1
+Address assignment: DHCP
+
+Testing completed:
+
+ip link confirmed the wireless interface is detected and operational (UP, LOWER_UP).
+ip addr show wlp11s0 confirmed a valid IPv4 address was assigned.
+ip route confirmed a valid default route through 192.168.1.1.
+Gateway test: ping -c 4 192.168.1.1 — 4/4 received, 0% packet loss, 4.27 ms average RTT.
+External connectivity: ping -c 4 8.8.8.8 — 4/4 received, 0% packet loss, 14.04 ms average RTT.
+DNS/external hostname test: ping -c 4 google.com — successfully resolved to 142.251.30.101; 4/4 received, 0% packet loss, 14.33 ms average RTT.
+
+Result: PASS ✅
+
+The system successfully demonstrated Wi-Fi interface detection, DHCP configuration, local gateway connectivity, external IPv4 connectivity, and DNS name resolution.
 
 
 
