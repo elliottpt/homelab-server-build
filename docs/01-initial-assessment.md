@@ -1,61 +1,119 @@
-networkingnetworking# Initial System Assessment
+# Initial System Assessment
+
+## Executive Summary
+
+This assessment was performed as the first phase of a project to repurpose an older gaming laptop into a headless Linux homelab server.
+
+The laptop initially failed to boot from local storage and instead attempted an EFI PXE network boot. A structured diagnostic process was used to determine the cause, beginning with firmware inspection and progressing to physical hardware inspection.
+
+The investigation established that the laptop contained **no internal storage device**. A known-good Kingston 240 GB SATA SSD containing Pop!_OS was installed and successfully detected and booted, confirming that the SATA interface was functional.
+
+The temporary Linux installation was subsequently used to validate the laptop's major hardware components and assess its suitability for continued use as a homelab server.
+
+Testing included:
+
+- CPU and hardware detection
+- SATA storage functionality
+- SSD SMART health
+- SSD self-test
+- Idle thermal monitoring
+- Five-minute all-thread CPU stress testing
+- RAM detection
+- 50 GB memory integrity testing
+- Battery health and AC/battery power transfer
+- Wi-Fi connectivity
+- Gigabit Ethernet connectivity
+- DHCP and IP configuration
+- Local and external network routing
+- DNS resolution
+
+No significant hardware fault was identified during the completed assessment.
+
+## Final Assessment Status
+
+| Component / Test | Result |
+| --- | --- |
+| Original boot failure diagnosis | **PASS — root cause identified** |
+| SATA interface | **PASS** |
+| Kingston 240 GB SSD detection | **PASS** |
+| SSD SMART health | **PASS** |
+| SSD short self-test | **PASS** |
+| CPU detection | **PASS** |
+| CPU stress/stability test | **PASS** |
+| Thermal validation | **PASS** |
+| RAM detection | **PASS** |
+| 50 GB RAM integrity test | **PASS** |
+| Battery condition | **PASS** |
+| AC/battery power transfer | **PASS** |
+| Wi-Fi | **PASS** |
+| Gigabit Ethernet | **PASS — 1000 Mb/s full duplex** |
+| Internet connectivity | **PASS** |
+| DNS resolution | **PASS** |
+| **Overall assessment** | **PASS** |
+
+The laptop is therefore considered suitable to proceed to the **Linux server installation and configuration phase**.
+
+---
+
+# Stage 1 — Initial Power-On and Boot Failure
 
 ## Project Background
 
-This project involves repurposing an old gaming laptop into a headless Linux home lab server.
+The objective of this project is to repurpose an old gaming laptop as a headless Linux homelab server.
 
-When the laptop was last regularly used, the internal display was experiencing problems and was believed to be faulty. During the initial assessment for this project, however, the internal display successfully produced a clear image without any immediately obvious visual defects. The condition and reliability of the display therefore remain under investigation.
+When the laptop was last regularly used, the internal display was experiencing problems and was believed to be faulty. During the initial assessment, however, the internal display successfully produced a clear image without immediately obvious visual defects.
 
-Regardless of the display's condition, the long-term goal is to configure the laptop as a headless server. Once configured and tested, the server will normally remain powered on and be administered remotely across the local network from another computer. The laptop's display and HDMI output will remain available as backup methods for direct troubleshooting if remote access is unavailable.
+The display is not considered critical to the planned server deployment because the finished system will normally operate headlessly and be administered remotely across the local network.
 
-## Stage 1 Initial Power-On Test
+The laptop's internal display and HDMI output will remain available as backup methods for direct troubleshooting if remote access is unavailable.
+
+## Initial Power-On
 
 The laptop successfully powered on during the initial assessment.
 
-During the initial boot test, the system did not boot into an operating system. Instead, it attempted an EFI PXE network boot over IPv6, which failed.
+However, the system did not boot into an operating system. Instead, the firmware attempted an EFI PXE network boot over IPv6, which subsequently failed.
 
 ![EFI PXE IPv6 boot failure](../images/01-pxe-boot-failure.jpg)
 
-*Figure 1 - Initial boot attempt showing the system falling back to an EFI PXE network boot after failing to locate a usable local boot device.*
+*Figure 1 — Initial boot attempt showing the system falling back to an EFI PXE network boot after failing to locate a usable local boot device.*
 
-## Initial Observations
+## Initial Diagnostic Assessment
 
-The PXE boot attempt suggests that the system did not locate a usable local boot device before attempting to boot from the network.
+The PXE boot attempt suggested that the firmware had failed to locate a usable local boot device before falling back to network boot.
 
-At this stage, possible causes include:
+Possible causes included:
 
 - No operating system installed
 - Missing or damaged bootloader
-- Internal storage not being detected
+- Internal storage not detected
 - Failed internal storage
-- Internal storage having previously been removed
+- Internal storage previously removed
 
-No conclusion has been reached yet.
+At this point, insufficient evidence was available to determine the root cause.
 
-## Next Diagnostic Step
+The next diagnostic step was therefore to inspect the BIOS/UEFI configuration and determine whether an internal storage device was detected.
 
-The next step will be to inspect the BIOS/UEFI configuration and determine whether the internal storage device is detected before physically opening the laptop.
+---
 
+# Stage 2 — BIOS and Storage Diagnostics
 
-## Stage 2 - BIOS and Storage Diagnostics
+Following the initial PXE boot failure, BIOS/UEFI diagnostics were performed to determine whether the laptop could detect an internal storage device.
 
-Following the initial PXE boot failure, further diagnostics were performed to determine why the laptop could not locate a bootable operating system and whether an internal storage device was being detected.
+## Boot Device Check
 
-### Boot Device Check
-
-After restarting the laptop, the system displayed a message stating that the default boot device was missing or that the boot process had failed.
+After restarting the laptop, the system displayed a message indicating that the default boot device was missing or that the boot process had failed.
 
 The Boot Option Menu was inspected and contained no available bootable devices.
 
-This confirmed that the system could not locate a bootable device. However, this alone did not confirm whether an internal storage device was physically installed, as a blank, failed, disconnected, or otherwise undetected drive could potentially produce similar symptoms.
+This confirmed that the firmware could not locate a bootable device. However, this did not establish whether storage was physically absent, blank, disconnected, failed or otherwise undetected.
 
 The BIOS/UEFI configuration was therefore inspected.
 
-### BIOS/UEFI Inspection
+## BIOS/UEFI Inspection
 
-The InsydeH2O BIOS Setup Utility was accessed using the F2 key during startup.
+The InsydeH2O BIOS Setup Utility was accessed using the `F2` key during startup.
 
-The BIOS reported the following system information:
+The BIOS reported:
 
 - CPU: Intel Core i7-10750H @ 2.60 GHz
 - Installed memory: 65,536 MB (64 GB)
@@ -63,156 +121,161 @@ The BIOS reported the following system information:
 
 The Main section of the BIOS was inspected for detected storage devices.
 
-The following SATA ports were reported as:
+The following SATA ports were reported:
 
 - SATA Port 1: Not Present
 - SATA Port 4: Not Present
 
 ![BIOS showing no detected SATA storage](../images/02-bios-storage-not-present.jpg)
 
-*Figure 2 - BIOS/UEFI Main screen showing no storage devices detected on SATA Port 1 or SATA Port 4.*
-
+*Figure 2 — BIOS/UEFI Main screen showing no storage devices detected on SATA Port 1 or SATA Port 4.*
 
 The OffBoard SATA Controller Configuration and OffBoard NVMe Controller Configuration were also inspected.
 
-No storage devices were reported as present in either configuration.
+No storage devices were reported in either configuration.
 
-### Current Diagnostic Conclusion
+## Diagnostic Assessment
 
-The BIOS/UEFI is currently detecting no SATA or NVMe storage devices.
-
-This is consistent with the previous observations:
+At this stage, the evidence established that:
 
 - The laptop failed to boot from local storage.
-- The system fell back to an EFI PXE network boot attempt.
+- The firmware fell back to EFI PXE network boot.
 - The PXE boot attempt failed.
 - A "Default Boot Device Missing or Boot Failed" message was displayed.
 - The Boot Option Menu contained no bootable devices.
-- No SATA storage devices were detected by the BIOS.
-- No NVMe storage devices were detected by the BIOS.
+- No SATA storage devices were detected.
+- No NVMe storage devices were detected.
 
-At this stage, there are two primary possibilities:
+Two primary possibilities remained:
 
-1. The laptop's previous internal storage device has been physically removed.
-2. A storage device remains installed but is not being detected due to a connection, hardware, or device failure.
+1. The laptop's previous internal storage had been physically removed.
+2. Storage remained installed but was not being detected because of a connection, device or hardware fault.
 
-A physical inspection is required before reaching a final conclusion.
+Physical inspection was therefore required.
 
-### Troubleshooting Process
+## Troubleshooting Path
 
-The investigation was deliberately performed from the least invasive diagnostic steps before moving to physical hardware inspection.
+The investigation deliberately progressed from the least invasive diagnostic steps toward physical inspection:
 
-The troubleshooting process so far has been:
+```text
+PXE boot failure
+        ↓
+Check Boot Option Menu
+        ↓
+No bootable devices found
+        ↓
+Enter BIOS/UEFI
+        ↓
+Check SATA storage
+        ↓
+No SATA devices detected
+        ↓
+Check NVMe storage
+        ↓
+No NVMe devices detected
+        ↓
+Physical inspection required
+```
 
-PXE boot failure  
-→ Check Boot Option Menu  
-→ No bootable devices found  
-→ Enter BIOS/UEFI  
-→ Check SATA storage  
-→ No SATA devices detected  
-→ Check NVMe storage  
-→ No NVMe devices detected  
-→ Physical inspection required
+---
 
-### Next Step - Physical Hardware Inspection
+# Stage 3 — Physical Hardware Inspection and Test Drive Verification
 
-The next stage of the initial assessment will involve opening the laptop and inspecting the internal hardware.
-
-Before opening the laptop, the system will be completely powered down and disconnected from external power and peripherals.
-
-The inspection will determine:
-
-- Whether an internal SSD or HDD is physically installed
-- Whether any installed storage device is correctly connected
-- Which SATA and/or M.2 storage interfaces are available
-- Whether there are any obvious hardware or connection problems
-- What type of replacement storage would be required if no drive is installed
-
-No replacement storage will be purchased until the laptop's internal storage configuration has been physically confirmed.
-
-## Stage 3 - Physical Hardware Inspection and Test Drive Verification
-
-Following the BIOS and storage diagnostics, the laptop was physically inspected to determine whether an internal storage device was installed and whether the available storage interfaces appeared usable.
-
-### Physical Inspection
+## Physical Inspection
 
 The laptop was completely powered down and disconnected from external power and peripherals before the bottom cover was removed.
 
-A visual inspection of the internal hardware confirmed that no storage device was installed in the available internal storage locations.
+Visual inspection confirmed that **no internal storage device was installed**.
 
 The inspection identified:
 
-- An empty 2.5-inch SATA storage bay
+- Empty 2.5-inch SATA storage bay
 - SATA data and power connection hardware present
 - No installed M.2/NVMe SSD
 - Two Corsair Vengeance DDR4 memory modules
 - Dual cooling fans and heatpipe assembly
 - No obvious signs of major physical damage
-- Only minor visible dust accumulation
+- Minor visible dust accumulation
 
-The SATA connector and associated cabling were visually inspected and showed no obvious signs of damage.
+The SATA connector and associated cabling showed no obvious signs of physical damage.
 
 ![Internal hardware inspection](../images/03-internal-hardware-inspection.jpg)
 
-*Figure 3 - Internal view of the laptop showing the motherboard, cooling system, 64 GB DDR4 memory and empty internal storage locations.*
+*Figure 3 — Internal view of the laptop showing the motherboard, cooling system, 64 GB DDR4 memory and empty internal storage locations.*
 
-A closer inspection of the 2.5-inch SATA connection confirmed that the combined SATA data and power connector was present.
+A closer inspection confirmed that the combined SATA data and power connector was present.
 
 ![SATA connector inspection](../images/04-sata-connector.jpg)
 
-*Figure 4 - Close-up of the empty 2.5-inch SATA storage connection. The connector and cabling showed no obvious signs of physical damage.*
+*Figure 4 — Close-up of the empty 2.5-inch SATA storage connection. The connector and cabling showed no obvious signs of physical damage.*
 
-### Known-Good SATA SSD Test
+## Known-Good SATA SSD Test
 
 Before purchasing replacement storage, a spare Kingston 240 GB 2.5-inch SATA SSD was used to test the laptop's storage interface.
 
-The spare SSD was physically compatible with the laptop's SATA connection and storage bay.
+The SSD was physically compatible with the laptop's SATA connection and contained an existing Pop!_OS Linux installation.
 
-The SSD contained an existing Pop!_OS Linux installation.
+After installation, the laptop initially displayed a boot failure before subsequently locating the drive and successfully booting into Pop!_OS.
 
-After installing the SSD, the laptop initially displayed a boot failure before subsequently locating the drive and successfully booting into Pop!_OS.
+This demonstrated that the laptop could:
 
-This demonstrated that the laptop was capable of:
+- Detect the SATA SSD
+- Read data from the drive
+- Load an existing bootloader
+- Start a Linux operating system
+- Reach a functioning desktop environment
 
-- Detecting the SATA SSD
-- Reading data from the drive
-- Loading an existing bootloader
-- Starting a Linux operating system
-- Reaching a functioning desktop environment
+This provided strong evidence that the original boot failure resulted from **the absence of internal storage**, rather than failure of the SATA controller or motherboard.
 
-This strongly supports the conclusion that the original boot problem was caused by the absence of an internal storage device rather than a failed SATA controller or motherboard fault.
+---
 
-### Linux Hardware Verification
+## Linux Hardware Verification
 
-The existing Pop!_OS installation was then used as a temporary diagnostic environment.
+The existing Pop!_OS installation was used as a temporary diagnostic environment.
 
-Several standard Linux commands were used to verify that the operating system could correctly detect the main hardware components.
+### CPU Verification
 
-#### CPU Verification
+The following command was used:
 
-The `lscpu` command reported:
+```bash
+lscpu
+```
+
+The system reported:
 
 - Architecture: x86_64
 - CPU: Intel Core i7-10750H @ 2.60 GHz
 - 6 physical CPU cores
-- 12 logical processors/threads
+- 12 logical processors
 - Intel VT-x virtualisation support
 
-The presence of VT-x is particularly useful for the planned homelab because the server will later be used to host virtual machines.
+VT-x support is particularly useful for the planned homelab because the server can later be used to host virtual machines.
 
 ![CPU verification](../images/05-lscpu-output.jpg)
 
-*Figure 5 - Linux `lscpu` output confirming the Intel Core i7-10750H, 6-core/12-thread configuration and VT-x virtualisation support.*
+*Figure 5 — Linux `lscpu` output confirming the Intel Core i7-10750H, 6-core/12-thread configuration and VT-x virtualisation support.*
 
-#### Memory Verification
+### Memory Verification
 
-The `free -h` command reported approximately 62 GiB of usable system memory.
+The following command was used:
 
-This is consistent with the 64 GB of installed DDR4 memory identified during the physical inspection and in the BIOS.
+```bash
+free -h
+```
 
-#### Storage Verification
+Approximately 62 GiB of usable system memory was detected.
 
-The `lsblk` command detected the temporary Kingston SSD as:
+This is consistent with the 64 GB of installed DDR4 memory identified during the physical inspection and BIOS assessment.
+
+### Storage Verification
+
+The following command was used:
+
+```bash
+lsblk
+```
+
+The Kingston SSD was detected as:
 
 - Device: `sda`
 - Usable capacity: approximately 223.6 GiB
@@ -221,9 +284,15 @@ The drive contained an existing Pop!_OS installation with EFI, recovery, root an
 
 This further confirmed that the SATA storage connection was functioning correctly.
 
-#### PCI Hardware Verification
+### PCI Hardware Verification
 
-The `lspci` command successfully enumerated several major system devices, including:
+The following command was used:
+
+```bash
+lspci
+```
+
+Linux successfully enumerated major system devices including:
 
 - Intel chipset and PCI controllers
 - Intel Wi-Fi 6 AX200 wireless adapter
@@ -231,53 +300,40 @@ The `lspci` command successfully enumerated several major system devices, includ
 - NVIDIA GeForce GTX 1650 Ti Mobile GPU
 - USB controllers
 - Audio devices
-- Other PCI-connected system hardware
+- Other PCI-connected hardware
 
 ![Linux hardware verification](../images/06-linux-hardware-verification.jpg)
 
-*Figure 6 - Linux hardware verification showing memory, storage and PCI device detection using `free -h`, `lsblk` and `lspci`.*
+*Figure 6 — Linux hardware verification showing memory, storage and PCI device detection using `free -h`, `lsblk` and `lspci`.*
 
-### Diagnostic Conclusion
+## Stage 3 Conclusion
 
-Stage 3 confirmed that the laptop's core hardware is functioning sufficiently to continue with the homelab project.
-
-The investigation established that:
+Stage 3 established that:
 
 - The laptop originally contained no internal storage device.
-- The SATA storage bay and connector are present.
-- The SATA interface successfully detects and boots from a known-good SSD.
-- The motherboard, CPU and memory are functioning sufficiently to run Linux.
-- Approximately 64 GB of RAM is available.
-- The Intel Core i7-10750H provides 6 cores and 12 threads.
-- Intel VT-x virtualisation support is available.
-- Gigabit Ethernet and Wi-Fi hardware are detected.
-- The NVIDIA GPU is detected.
-- No major hardware fault has been identified during the initial assessment.
+- The SATA storage bay and connector were present.
+- The SATA interface successfully detected and booted from a known-good SSD.
+- The motherboard, CPU and memory were capable of running Linux.
+- Approximately 64 GB of RAM was available.
+- The Intel Core i7-10750H provided 6 cores and 12 threads.
+- Intel VT-x virtualisation support was available.
+- Gigabit Ethernet and Wi-Fi hardware were detected.
+- The NVIDIA GPU was detected.
+- No major hardware fault was identified.
 
-The original EFI PXE boot failure can therefore be explained by the absence of an installed local storage device. With no bootable local drive available, the firmware fell back to attempting a network boot.
+The original EFI PXE boot failure could therefore be explained by the absence of an installed local storage device.
 
-### Next Steps
+---
 
-Before replacing the existing Pop!_OS installation, a small number of additional health checks will be performed, including storage health and system temperature checks.
+# Stage 4 — Operating System Update and SSD Health Validation
 
-Provided those checks do not identify any significant problems, the temporary 240 GB SATA SSD will be used to continue the project.
+Following successful installation and boot of the temporary Kingston 240 GB SATA SSD, further checks were performed before proceeding with more intensive system testing.
 
-A larger SATA SSD may be installed later when additional storage capacity is required.
+## Operating System Update
 
+The existing Pop!_OS installation had not been used or updated for approximately one year.
 
-## Stage 4 - Operating System Update and SSD Health Validation
-
-Following the successful installation and boot of the temporary Kingston 240 GB SATA SSD, additional checks were performed before proceeding with the server installation.
-
-The purpose of this stage was to ensure that the existing Pop!_OS installation was sufficiently up to date for further diagnostic work and to assess the health and reliability of the temporary SSD.
-
-### Operating System Update
-
-The existing Pop!_OS installation on the SSD had not been used or updated for approximately one year.
-
-Before relying on the operating system for further hardware diagnostics, the installed software and packages were updated.
-
-During the upgrade process, `dpkg` reported errors involving the following System76 DKMS packages:
+During the package upgrade process, `dpkg` reported errors involving:
 
 - `system76-dkms`
 - `system76-acpi-dkms`
@@ -288,49 +344,45 @@ The incomplete package configuration was investigated using:
 sudo dpkg --configure -a
 ```
 
-The resulting output showed that the System76 DKMS modules were encountering errors while attempting to build against an installed Linux kernel.
+The output indicated that the System76 DKMS modules encountered errors while attempting to build against an installed Linux kernel.
 
-DKMS (Dynamic Kernel Module Support) is used to automatically rebuild third-party kernel modules when Linux kernels are installed or updated. This allows modules such as hardware drivers to remain compatible following kernel updates.
+DKMS (Dynamic Kernel Module Support) automatically rebuilds third-party kernel modules when kernels are installed or updated.
 
-To determine which Linux kernel was currently running, the following command was used:
+The currently running kernel was checked using:
 
 ```bash
 uname -r
 ```
 
-Before rebooting, the system reported:
+Before rebooting:
 
 ```text
 6.0.2-76060002-generic
 ```
 
-The software update had installed a newer Linux kernel, but the operating system was still running the older kernel already loaded into memory.
+The software update had installed a newer kernel, but the operating system was still running the kernel already loaded into memory.
 
-The laptop was therefore rebooted and the kernel version checked again.
-
-Following the reboot, `uname -r` returned:
+After rebooting, `uname -r` returned:
 
 ```text
 7.1.1-76070101-generic
 ```
 
-This confirmed that the laptop successfully booted using the newly installed Linux kernel.
+This confirmed successful boot into the newly installed Linux kernel.
 
-Although the system successfully booted into the newer kernel, the earlier System76 DKMS package errors were noted rather than treated as fully resolved, as successful booting alone does not confirm that both packages subsequently configured without error.
+The earlier System76 DKMS package errors were retained in the project record rather than considered resolved solely because the newer kernel booted successfully.
 
-### Installing SMART Diagnostic Tools
+---
 
-With the updated Pop!_OS environment successfully booting, the next step was to assess the health of the temporary Kingston 240 GB SATA SSD.
+## SSD SMART Health Assessment
 
-The `smartmontools` package was installed using:
+The `smartmontools` package was installed:
 
 ```bash
 sudo apt install smartmontools
 ```
 
-This package provides the `smartctl` utility, which can retrieve SMART (Self-Monitoring, Analysis and Reporting Technology) information recorded internally by compatible storage devices.
-
-The SSD's SMART information was retrieved using:
+SMART information for the SSD was retrieved using:
 
 ```bash
 sudo smartctl -a /dev/sda
@@ -342,13 +394,13 @@ The overall SMART health assessment reported:
 PASSED
 ```
 
-The overall PASS result was not treated as sufficient evidence by itself. Additional SMART attributes and the drive's recorded history were reviewed for possible signs of wear, communication problems or storage failure.
+Additional SMART attributes were reviewed rather than relying exclusively on the overall health indicator.
 
-### SMART Health Results
+### SMART Results
 
-The SMART information showed the following notable results:
+The notable results were:
 
-- Overall SMART health assessment: **PASSED**
+- Overall SMART health: **PASSED**
 - Power-on time: approximately **2,121 hours**
 - Power cycle count: approximately **2,279**
 - Operating temperature: approximately **32°C**
@@ -359,35 +411,31 @@ The SMART information showed the following notable results:
 - SMART error log: **No Errors Logged**
 - Unsafe shutdown count: **17**
 
-The historical unsafe shutdown count was noted. However, the remaining SMART information did not indicate a current storage fault.
+The historical unsafe shutdown count was noted. However, the remaining SMART information did not indicate an active storage fault.
 
-The drive showed a high remaining life indicator, no significant error history and no evidence of communication problems with the laptop's SATA interface.
+---
 
-### SMART Short Self-Test
+## SMART Short Self-Test
 
-In addition to reviewing the SSD's recorded SMART information, the drive's built-in short self-test was performed.
-
-The test was started using:
+The SSD's built-in short diagnostic was started using:
 
 ```bash
 sudo smartctl -t short /dev/sda
 ```
 
-The SSD reported that the test would require approximately two minutes to complete.
-
-After allowing the test to finish, the SMART self-test log was retrieved using:
+After the required test period, the self-test log was retrieved:
 
 ```bash
 sudo smartctl -l selftest /dev/sda
 ```
 
-The result was:
+Result:
 
 ```text
 # 1  Short offline  Completed without error  00%  2121  -
 ```
 
-The `00%` value represents the percentage of the test remaining and therefore indicates that the diagnostic completed fully.
+The `00%` value represents the percentage of the test remaining, indicating that the diagnostic completed fully.
 
 The key result was:
 
@@ -395,95 +443,66 @@ The key result was:
 Completed without error
 ```
 
-This confirmed that the SSD successfully completed its internal short diagnostic without identifying an error.
-
 ![SMART short self-test result](../images/07-smart-short-self-test.jpg)
 
-*Figure 7 - SMART short self-test result for the temporary Kingston 240 GB SATA SSD, confirming that the diagnostic completed without error.*
+*Figure 7 — SMART short self-test result for the temporary Kingston 240 GB SATA SSD, confirming that the diagnostic completed without error.*
 
-### Stage 4 Diagnostic Conclusion
+## Stage 4 Conclusion
 
-The temporary Kingston 240 GB SATA SSD successfully passed both its SMART health assessment and its built-in short self-test.
-
-The assessment established that:
-
-- The SSD passes its overall SMART health assessment.
-- The SMART short self-test completed without error.
-- No reported uncorrectable errors were identified.
-- No significant reallocation activity was identified.
-- No SATA communication errors were identified.
-- No errors were recorded in the SMART error log.
-- The drive operated at a normal temperature during testing.
-- The SSD reported approximately 96% remaining life.
-- The laptop successfully boots and operates using the updated Linux kernel.
+The Kingston 240 GB SATA SSD successfully passed both the SMART health assessment and its built-in short self-test.
 
 No significant evidence of an active SSD fault was identified.
 
-The temporary Kingston 240 GB SATA SSD is therefore considered suitable for continued use during the initial homelab server build.
+The SSD was therefore considered suitable for the initial homelab deployment.
 
-The primary limitation of the drive is its capacity rather than its current health. The 240 GB SSD is sufficient for the initial server installation and early homelab work, but additional storage may eventually be required as the environment expands to include virtual machines, containers, snapshots, backups and other services.
+Its primary limitation is capacity rather than current health. Additional storage may eventually be required as the environment expands to include virtual machines, containers, snapshots, backups and other services.
 
-### Next Steps
+---
 
-With the temporary SSD validated, the remaining initial hardware checks will focus on system stability and functionality, including:
+# Stage 5 — System Stability and Hardware Validation
 
-- System temperature monitoring
-- Network interface testing
-- Basic stability testing
-
-Once these checks are complete and no significant hardware problems have been identified, the initial system assessment can be concluded and the project can proceed to installation and configuration of the server operating system.
-
-
-# Stage 5 - System Stability, Thermal and Memory Validation
-
-Following the storage-health assessment, additional testing was performed to determine whether the laptop remained stable under load and whether its cooling system and installed memory were suitable for continued use as a homelab server.
-
-This testing was also intended to determine whether the previously suspected but undocumented hardware instability could be reproduced before replacing the existing diagnostic operating system.
-
-Stage 5 remains in progress. The thermal, CPU stability and memory validation portions have now been completed.
+Stage 5 tested whether the laptop could operate reliably under load and whether its thermal, memory, power and networking subsystems were suitable for homelab use.
 
 ---
 
 ## Idle Thermal Assessment
 
-The system's hardware temperature sensors were inspected using:
+Hardware temperature sensors were inspected using:
 
 ```bash
 sensors
 ```
 
-At idle, the system reported approximately:
+Approximate idle readings were:
 
 - CPU package: 33°C
-- CPU cores: 32-33°C
-- Memory modules: 29-30°C
+- CPU cores: 32–33°C
+- Memory modules: 29–30°C
 - Wi-Fi adapter: 30°C
 - Platform Controller Hub (PCH): 41°C
 - ACPI thermal zone: 34°C
 
 The CPU reported a critical temperature threshold of 100°C.
 
-Some memory sensor entries displayed 0°C alarm thresholds. These values were inconsistent with the actual memory temperatures and were therefore treated as malformed or unavailable threshold information rather than evidence of a thermal problem.
+Some memory sensor entries displayed 0°C alarm thresholds. These were inconsistent with the actual measured temperatures and were treated as malformed or unavailable threshold data rather than evidence of a thermal problem.
 
-The observed idle temperatures were low and showed no indication of abnormal heat generation.
-
-**Result: PASS - no thermal concern identified at idle.**
+**Result: PASS — no thermal concern identified at idle.**
 
 ![Idle thermal baseline](../images/08-idle-thermal-baseline.jpg)
 
-*Figure 8 - Idle hardware temperature readings collected before controlled load testing.*
+*Figure 8 — Idle hardware temperature readings collected before controlled load testing.*
 
 ---
 
 ## Controlled CPU Stress and Stability Test
 
-To test system behaviour under sustained CPU load, the availability of `stress-ng` was first checked using:
+The availability of `stress-ng` was checked using:
 
 ```bash
 command -v stress-ng
 ```
 
-No installed executable was returned, so the utility was installed using:
+As it was not installed, it was added using:
 
 ```bash
 sudo apt install stress-ng
@@ -495,17 +514,17 @@ A five-minute CPU stress test was then performed:
 stress-ng --cpu 0 --timeout 5m --metrics-brief
 ```
 
-The options used performed the following functions:
+Options:
 
-- `--cpu 0` - use all available logical CPUs
-- `--timeout 5m` - automatically stop the test after five minutes
-- `--metrics-brief` - provide a summary when the test completes
+- `--cpu 0` — use all available logical CPUs
+- `--timeout 5m` — stop automatically after five minutes
+- `--metrics-brief` — provide a summary on completion
 
-The Intel Core i7-10750H contains six physical CPU cores and twelve logical processors through Hyper-Threading.
+The Intel Core i7-10750H contains six physical cores and twelve logical processors through Hyper-Threading.
 
 `stress-ng` therefore dispatched twelve CPU workers.
 
-Temperatures were monitored separately during the test using:
+Temperatures were monitored separately using:
 
 ```bash
 watch -n 2 sensors
@@ -513,23 +532,19 @@ watch -n 2 sensors
 
 The stress test completed its full five-minute duration successfully.
 
-The final output reported that twelve CPU workers had been dispatched and that the test completed successfully after approximately 300 seconds.
+The observed CPU temperature peaked at approximately **82°C**, remaining below the reported **100°C critical threshold**.
 
-During the test, the observed CPU temperature peaked at approximately 82°C.
+No crash, freeze, unexpected shutdown or other visible instability occurred.
 
-This remained below the CPU's reported 100°C critical temperature threshold.
-
-No system crash, freeze, unexpected shutdown or other visible instability occurred during the test.
-
-**Result: PASS - the system completed a five-minute all-thread CPU stress test without reproduced instability or excessive observed temperature.**
+**Result: PASS — five-minute all-thread CPU stress test completed without reproduced instability or excessive observed temperature.**
 
 ![CPU stress test complete](../images/09-cpu-stress-test-complete.jpg)
 
-*Figure 9 - Successful completion of the five-minute `stress-ng` CPU stability test.*
+*Figure 9 — Successful completion of the five-minute `stress-ng` CPU stability test.*
 
 ---
 
-## Memory Detection Verification
+## Memory Detection
 
 Memory availability was checked using:
 
@@ -537,7 +552,7 @@ Memory availability was checked using:
 free -h
 ```
 
-The operating system reported:
+The system reported:
 
 ```text
               total    used    free    shared    buff/cache    available
@@ -548,55 +563,43 @@ Swap:          19Gi       0B    19Gi
 This confirmed approximately:
 
 - Total usable memory: 62 GiB
-- Used memory at the time of inspection: 3.5 GiB
-- Free memory: 56 GiB
-- Available memory: 55 GiB
+- Used: 3.5 GiB
+- Free: 56 GiB
+- Available: 55 GiB
 - Swap: 19 GiB
 
-The approximately 62 GiB of usable memory is consistent with the laptop's installed 64 GB of DDR4 RAM, allowing for differences in memory measurement and memory reserved by the system.
+The approximately 62 GiB of usable memory is consistent with 64 GB of physically installed RAM after accounting for measurement differences and system-reserved memory.
 
-**Result: PASS - the installed 64 GB of RAM is being detected correctly by the operating system.**
+**Result: PASS**
 
 ---
 
 ## Memory Integrity Test
 
-Correct memory detection does not by itself establish that the installed RAM is operating reliably.
+Because correct memory detection does not establish memory reliability, a dedicated integrity test was performed.
 
-A memory integrity test was therefore performed.
-
-The availability of `memtester` was first checked using:
-
-```bash
-command -v memtester
-```
-
-As the utility was not installed, it was installed using:
+`memtester` was installed using:
 
 ```bash
 sudo apt install memtester
 ```
 
-A 50 GB memory test was then started using:
+A 50 GB test was then performed:
 
 ```bash
 sudo memtester 50G 1
 ```
 
-The command instructed `memtester` to test 50 GB of memory for one complete pass.
-
-Testing 50 GB allowed a large majority of the available physical memory to be exercised while leaving sufficient memory available for the running operating system and diagnostic environment.
-
-`memtester` successfully allocated and locked:
+The utility successfully allocated and locked:
 
 ```text
 51200MB
 53687091200 bytes
 ```
 
-The test then completed one full loop.
+One complete test loop was performed.
 
-The completed test patterns included:
+Test patterns included:
 
 - Stuck Address
 - Random Value
@@ -619,86 +622,46 @@ The completed test patterns included:
 
 Every displayed test completed with an `ok` result.
 
-The utility subsequently displayed:
+The utility subsequently reported:
 
 ```text
 Done.
 ```
 
-and returned normally to the shell.
+No memory errors, crashes, freezes or other visible instability occurred.
 
-No memory errors were reported, and the system did not crash, freeze or display any other visible instability during the test.
+Because `memtester` operates from within a running operating system, it cannot test literally every physical memory address. However, successfully exercising 50 GB provides substantial evidence of memory stability for the purposes of this assessment.
 
-Because `memtester` operates from within the running operating system, it does not test literally every physical memory address. However, successfully exercising 50 GB of the installed memory provides substantial evidence that the RAM is functioning reliably for the purposes of the current hardware assessment.
-
-**Result: PASS - 50 GB of RAM completed one full `memtester` integrity test without detected errors.**
+**Result: PASS — 50 GB completed one full `memtester` integrity test without detected errors.**
 
 ---
 
-## Stage 5 Progress Summary
+# Battery and Power Validation
 
-The following Stage 5 validation has now been completed:
+Although the server is expected to operate primarily from AC power, the internal battery can provide useful short-duration backup power during a mains interruption.
 
-| Test | Result |
-| --- | --- |
-| Idle thermal validation | **PASS** |
-| CPU stress and stability test | **PASS** |
-| RAM detection | **PASS** |
-| 50 GB RAM integrity test | **PASS** |
-| Battery and power assessment | **PASS** |
-| Wi-Fi validation | **NOT YET TESTED** |
-| Ethernet validation | **NOT YET TESTED** |
+Battery health and AC/battery transfer behaviour were therefore assessed.
 
-The completed testing has not reproduced the previously suspected hardware instability.
+## Battery Capacity and Telemetry
 
-So far, the laptop has demonstrated:
+Linux exposed the battery at:
 
-- Normal idle operating temperatures
-- Stable operation under full CPU load
-- An observed CPU peak of approximately 82°C during the five-minute stress test
-- Correct detection of the installed 64 GB of RAM
-- Successful integrity testing of 50 GB of memory
-- No crashes, freezes or unexpected shutdowns during the completed stability tests
+```text
+/sys/class/power_supply/BAT0/
+```
 
-These results provide additional evidence that the machine is suitable for continued assessment and potential homelab deployment.
+The following interfaces were inspected:
 
-They do not establish that every component is fault-free or guarantee future reliability.
+```bash
+cat /sys/class/power_supply/BAT0/charge_full
+cat /sys/class/power_supply/BAT0/charge_full_design
+cat /sys/class/power_supply/BAT0/status
+cat /sys/class/power_supply/BAT0/capacity
+cat /sys/class/power_supply/BAT0/cycle_count
+cat /sys/class/power_supply/BAT0/voltage_now
+```
 
-The appropriate conclusion at the current stage is therefore:
-
-> **No corresponding hardware instability has been reproduced during the thermal, CPU and memory validation performed so far.**
-
-Stage 5 will continue with battery/power validation followed by Wi-Fi and Gigabit Ethernet testing before the initial hardware assessment is closed.
-
-### Battery and Power Validation
-
-The internal battery was originally considered unnecessary because the finished server is expected to operate primarily from AC power. However, this decision was reconsidered because a healthy laptop battery can provide useful temporary backup power during a mains interruption.
-
-Retaining the battery could allow the server to remain operational during short outages or provide sufficient time for a controlled shutdown rather than experiencing an abrupt loss of power.
-
-Battery health, physical condition and power-transfer behaviour were therefore added to the hardware assessment.
-
-#### Battery Capacity and Telemetry
-
-Linux exposed the internal battery at:
-
-`/sys/class/power_supply/BAT0/`
-
-Battery information was examined using:
-
-`cat /sys/class/power_supply/BAT0/charge_full`
-
-`cat /sys/class/power_supply/BAT0/charge_full_design`
-
-`cat /sys/class/power_supply/BAT0/status`
-
-`cat /sys/class/power_supply/BAT0/capacity`
-
-`cat /sys/class/power_supply/BAT0/cycle_count`
-
-`cat /sys/class/power_supply/BAT0/voltage_now`
-
-The following values were reported:
+Reported values:
 
 - `charge_full`: 3,099,000
 - `charge_full_design`: 3,175,000
@@ -707,141 +670,139 @@ The following values were reported:
 - `cycle_count`: 0
 - `voltage_now`: 17,012,000 microvolts
 
-Comparing the reported full-charge capacity with the original design capacity gives an estimated capacity retention of approximately **97.6%**, representing approximately **2.4% reported capacity loss**.
+Comparing full-charge capacity with design capacity produced an estimated capacity retention of approximately **97.6%**, corresponding to approximately **2.4% reported capacity loss**.
 
-The reported voltage corresponds to approximately **17.01 V**, which was consistent with the earlier `sensors` reading of approximately 17.02 V.
+The reported voltage corresponds to approximately **17.01 V**.
 
-The reported cycle count of `0` was not interpreted as proof that the battery has never been cycled. The hardware may simply not expose meaningful cycle-count information through this Linux interface.
+The reported cycle count of `0` was not interpreted as proof that the battery had never been cycled because the hardware may not expose meaningful cycle-count data through this Linux interface.
 
-#### Physical Battery Inspection
+## Physical Battery Inspection
 
-The battery had previously been visible during the internal hardware inspection performed when the temporary SATA SSD was installed.
+No visible swelling, deformation, leakage or other obvious physical damage was observed during the earlier internal inspection.
 
-No visible swelling, deformation, leakage or other obvious physical damage was observed.
+**Physical battery condition: PASS**
 
-**Battery physical condition: PASS**
+## AC/Battery Transfer Test
 
-#### AC Power and Battery Transfer Test
+AC power state was checked using:
 
-AC power detection was checked using:
+```bash
+cat /sys/class/power_supply/AC/online
+```
 
-`cat /sys/class/power_supply/AC/online`
+With AC connected:
 
-With AC connected, the system reported:
+```text
+1
+```
 
-`1`
+The charger was disconnected while the laptop remained powered on and idle.
 
-The charger was then disconnected while the laptop remained powered on and idle.
+The system continued operating normally.
 
-The system continued operating normally. AC status changed to:
+AC status changed to:
 
-`0`
+```text
+0
+```
 
 Battery status changed to:
 
-`Discharging`
+```text
+Discharging
+```
 
 During the short test, reported battery capacity decreased from 100% to approximately 96%.
 
-The charger was then reconnected.
+After reconnecting the charger, AC status returned to:
 
-AC status returned to:
-
-`1`
+```text
+1
+```
 
 Battery status changed to:
 
-`Charging`
+```text
+Charging
+```
 
-No crash, freeze, unexpected shutdown or other abnormal behaviour occurred during either power transition.
+No crash, freeze or unexpected shutdown occurred during either transition.
 
 **AC-loss and battery-transfer test: PASS**
 
-#### Charge-Limit Investigation
+## Charge-Limit Investigation
 
-Because the server may eventually operate continuously from AC power, standard Linux battery charge-limit support was investigated using:
+Charge-control threshold support was investigated using:
 
-`ls /sys/class/power_supply/BAT0/ | grep threshold`
+```bash
+ls /sys/class/power_supply/BAT0/ | grep threshold
+```
 
 No output was returned.
 
-Standard Linux charge-control threshold files are therefore not currently exposed through the BAT0 interface by the installed firmware/driver combination.
+Standard Linux charge-control threshold files were therefore not exposed through the current BAT0 interface.
 
-This does not establish that charge limiting is impossible on this hardware. Charge-limit support will be investigated again after installation of the final server operating system, including any appropriate hardware-specific Linux driver support.
+This does not establish that charge limiting is impossible on this hardware. The feature can be investigated again after deployment of the final server operating system.
 
-#### Battery Assessment Conclusion
+## Battery Assessment
 
-The battery currently reports approximately **97.6% of its original design capacity**, showed no obvious physical damage during inspection, successfully powered the laptop when AC power was removed, and resumed charging normally when AC power was restored.
+The battery:
 
-The internal battery will therefore be **retained in the server build**.
+- Reports approximately 97.6% of original design capacity
+- Shows no obvious physical damage
+- Successfully powers the laptop following AC disconnection
+- Returns to charging after AC restoration
+- Causes no instability during power transitions
 
-Although it is not a substitute for a managed UPS, it provides useful short-duration backup power and could later be combined with battery monitoring and an automated graceful-shutdown mechanism.
+The internal battery will therefore be retained in the server build.
 
-Update  01-initial-assessment.mdUpdate  01-initial-assessment.md**Battery and power validation: PASS**
+It is not a replacement for a managed UPS, but it provides useful short-duration backup power and could later be combined with monitoring and automated graceful-shutdown functionality.
 
+**Battery and power validation: PASS**
 
-Stage 5 will continue with Wi-Fi and Gigabit Ethernet testing before the initial hardware assessment is closed.
+---
 
+# Network Validation
 
-### Wi-Fi Validation — PASS
+Both wireless and wired networking were tested before closing the hardware assessment.
 
-The laptop's Intel Wi-Fi adapter was tested to confirm that the wireless interface was detected correctly, associated with the local network, received valid network configuration, and could communicate reliably with both the local gateway and the wider internet.
+---
 
-The wireless interface was first identified using:
+## Wi-Fi Validation
 
-```bash
-ip link
-```
+The laptop's Intel Wi-Fi adapter was tested for interface detection, DHCP configuration, routing, Internet connectivity and DNS resolution.
 
-The system reported the wireless interface as:
+### Interface and Address Configuration
+
+The wireless interface was identified as:
 
 ```text
 wlp11s0
 ```
 
-The interface was then inspected directly:
+The interface reported `UP` and `LOWER_UP`.
 
-```bash
-ip link show wlp11s0
-```
-
-The interface reported `UP` and `LOWER_UP`, confirming that it was enabled and operational at the link level.
-
-NetworkManager status was checked using:
-
-```bash
-nmcli device status
-```
-
-This showed `wlp11s0` connected to the wireless network `Zyxel_71E4`.
-
-IPv4 configuration was then checked with:
-
-```bash
-ip addr show wlp11s0
-```
-
-The interface had received the following IPv4 address:
+IPv4 configuration:
 
 ```text
 192.168.1.230/24
 ```
 
-The address was reported as dynamic, indicating that it had been assigned through the network's DHCP configuration.
+Address assignment:
 
-The routing table was inspected using:
-
-```bash
-ip route
+```text
+Dynamic / DHCP
 ```
 
-The default gateway was identified as:
+Default gateway:
 
 ```text
 192.168.1.1
 ```
 
-Local gateway connectivity was tested with:
+### Gateway Connectivity
+
+Command:
 
 ```bash
 ping -c 4 192.168.1.1
@@ -852,14 +813,14 @@ Results:
 - 4 packets transmitted
 - 4 packets received
 - 0% packet loss
-- Average round-trip latency: approximately 2.01 ms
+- Average RTT: approximately **4.27 ms**
 
-This confirmed reliable communication between the laptop and the local router.
+### External IPv4 Connectivity
 
-Internet connectivity was then tested independently of DNS by pinging the public address `1.1.1.1`:
+Command:
 
 ```bash
-ping -c 4 1.1.1.1
+ping -c 4 8.8.8.8
 ```
 
 Results:
@@ -867,119 +828,346 @@ Results:
 - 4 packets transmitted
 - 4 packets received
 - 0% packet loss
-- Minimum latency: 8.461 ms
-- Average latency: 9.626 ms
-- Maximum latency: 11.513 ms
-- mdev: 1.146 ms
+- Average RTT: approximately **14.04 ms**
 
-This confirmed that the laptop could successfully route traffic beyond the local network.
+Successful communication with a numerical external address demonstrated Internet connectivity independently of DNS.
 
-DNS resolution was tested separately by using a hostname rather than a numerical IP address:
+### DNS and Hostname Connectivity
 
-```bash
-ping -c 4 www.google.com
-```
-
-The hostname successfully resolved to `142.251.151.119`.
-
-Results:
-
-- 4 packets transmitted
-- 4 packets received
-- 0% packet loss
-- Minimum latency: 10.057 ms
-- Average latency: 11.414 ms
-- Maximum latency: 12.730 ms
-- mdev: 1.050 ms
-
-This confirmed that DNS resolution and external hostname connectivity were functioning correctly.
-
-The `iw` wireless diagnostic utility was not initially installed. It was added using:
+Command:
 
 ```bash
-sudo apt install iw
+ping -c 4 google.com
 ```
 
-The active wireless link was then inspected using:
-
-```bash
-iw dev wlp11s0 link
-```
-
-Reported link information included:
+The hostname successfully resolved to:
 
 ```text
-SSID: Zyxel_71E4
-Frequency: 2472 MHz
-Signal: -43 dBm
-RX bitrate: 137.6 MBit/s
-TX bitrate: 117.0 MBit/s
+142.251.30.101
 ```
 
-The 2472 MHz frequency confirms that the connection was operating on the 2.4 GHz band. A signal level of approximately -43 dBm represents a strong wireless signal. The reported HE link parameters are consistent with an 802.11ax / Wi-Fi 6 connection.
+Results:
 
-The RX and TX bitrate values represent the negotiated wireless link rate at the time of testing and should not be interpreted as guaranteed internet throughput.
+- 4 packets transmitted
+- 4 packets received
+- 0% packet loss
+- Average RTT: approximately **14.33 ms**
 
-#### Wi-Fi Validation Result
+This confirmed functioning DNS resolution and external hostname connectivity.
+
+### Wi-Fi Result
 
 | Test | Result |
-|---|---|
+| --- | --- |
 | Wireless interface detected | **PASS** |
 | Interface operational | **PASS** |
-| Wi-Fi association | **PASS** |
 | IPv4/DHCP configuration | **PASS** |
 | Default route | **PASS** |
 | Local gateway connectivity | **PASS** |
-| Internet connectivity | **PASS** |
+| External IPv4 connectivity | **PASS** |
 | DNS resolution | **PASS** |
 | Packet loss | **0%** |
-| Wireless signal strength | **PASS — -43 dBm** |
 
-**Overall result: PASS**
+**Overall Wi-Fi Result: PASS**
 
-The Intel wireless adapter is detected correctly, maintains a strong connection to the local access point, receives valid network configuration, and provides reliable local-network, internet and DNS connectivity.
+---
 
-### Next Step
+# Ethernet Validation
 
-The remaining networking validation is the laptop's Realtek Gigabit Ethernet interface. Ethernet testing will include physical link detection, negotiated link speed, DHCP/IP configuration, gateway connectivity, internet connectivity and DNS resolution.
+Wired Ethernet validation was performed using the laptop's Realtek Gigabit Ethernet interface.
 
+## Physical Link
 
-Stage 5: Network Validation — Wi-Fi
+Command:
 
-Wi-Fi/basic network validation completed successfully on the Pop!_OS homelab laptop.
+```bash
+ip link show enp12s0f1
+```
 
-Interface: wlp11s0
-IPv4 address: 192.168.1.230/24
-Default gateway: 192.168.1.1
-Address assignment: DHCP
+Output:
 
-Testing completed:
+```text
+2: enp12s0f1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP mode DEFAULT group default qlen 1000
+    link/ether 80:fa:5b:89:95:e5 brd ff:ff:ff:ff:ff:ff
+```
 
-ip link confirmed the wireless interface is detected and operational (UP, LOWER_UP).
-ip addr show wlp11s0 confirmed a valid IPv4 address was assigned.
-ip route confirmed a valid default route through 192.168.1.1.
-Gateway test: ping -c 4 192.168.1.1 — 4/4 received, 0% packet loss, 4.27 ms average RTT.
-External connectivity: ping -c 4 8.8.8.8 — 4/4 received, 0% packet loss, 14.04 ms average RTT.
-DNS/external hostname test: ping -c 4 google.com — successfully resolved to 142.251.30.101; 4/4 received, 0% packet loss, 14.33 ms average RTT.
+Key findings:
 
-Result: PASS ✅
+- Interface: `enp12s0f1`
+- Interface state: `UP`
+- Physical carrier: `LOWER_UP`
 
-The system successfully demonstrated Wi-Fi interface detection, DHCP configuration, local gateway connectivity, external IPv4 connectivity, and DNS name resolution.
+`UP` confirms that the interface was enabled, while `LOWER_UP` confirms physical link detection.
 
+**Result: PASS**
 
+---
 
+## Link Speed and Duplex
 
+Command:
 
+```bash
+ethtool enp12s0f1
+```
 
+Relevant output:
 
+```text
+Speed: 1000Mb/s
+Duplex: Full
+Auto-negotiation: on
+Link detected: yes
+```
 
+The Ethernet interface successfully negotiated a **1000 Mb/s full-duplex** connection.
 
+A `netlink error: Operation not permitted` message was also displayed while running `ethtool`. This did not prevent retrieval of the required link information and did not indicate failure of the Ethernet connection.
 
+**Result: PASS**
 
+---
 
+## DHCP and IPv4 Configuration
 
+Command:
 
+```bash
+ip addr show enp12s0f1
+```
 
+Relevant output:
 
+```text
+inet 192.168.1.209/24 brd 192.168.1.255 scope global dynamic noprefixroute enp12s0f1
+```
 
+Key findings:
 
+- IPv4 address: `192.168.1.209/24`
+- Address assignment: Dynamic/DHCP
+- Interface: `enp12s0f1`
+
+**Result: PASS**
+
+---
+
+## Routing
+
+Command:
+
+```bash
+ip route
+```
+
+Output:
+
+```text
+default via 192.168.1.1 dev enp12s0f1 proto dhcp metric 100
+169.254.0.0/16 dev enp12s0f1 scope link metric 1000
+192.168.1.0/24 dev enp12s0f1 proto kernel scope link src 192.168.1.209 metric 100
+```
+
+Key findings:
+
+- Default gateway: `192.168.1.1`
+- Default interface: `enp12s0f1`
+- Local subnet: `192.168.1.0/24`
+- Source address: `192.168.1.209`
+
+The system had a valid default route through the wired Ethernet interface.
+
+**Result: PASS**
+
+---
+
+## Local Gateway Connectivity
+
+Command:
+
+```bash
+ping -c 4 192.168.1.1
+```
+
+Output:
+
+```text
+PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
+64 bytes from 192.168.1.1: icmp_seq=1 ttl=64 time=0.581 ms
+64 bytes from 192.168.1.1: icmp_seq=2 ttl=64 time=0.588 ms
+64 bytes from 192.168.1.1: icmp_seq=3 ttl=64 time=0.640 ms
+64 bytes from 192.168.1.1: icmp_seq=4 ttl=64 time=0.651 ms
+
+--- 192.168.1.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3111ms
+rtt min/avg/max/mdev = 0.581/0.615/0.651/0.030 ms
+```
+
+Results:
+
+- 4/4 packets received
+- Packet loss: **0%**
+- Average RTT: **0.615 ms**
+
+**Result: PASS**
+
+---
+
+## External IPv4 Connectivity
+
+Command:
+
+```bash
+ping -c 4 8.8.8.8
+```
+
+Output:
+
+```text
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=115 time=11.4 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=115 time=10.8 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=115 time=10.0 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=115 time=9.36 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3004ms
+rtt min/avg/max/mdev = 9.360/10.386/11.366/0.760 ms
+```
+
+Results:
+
+- 4/4 packets received
+- Packet loss: **0%**
+- Average RTT: **10.386 ms**
+
+This confirmed external IPv4 connectivity independently of DNS.
+
+**Result: PASS**
+
+---
+
+## DNS and Hostname Connectivity
+
+Command:
+
+```bash
+ping -c 4 google.com
+```
+
+Output:
+
+```text
+PING google.com (142.250.129.102) 56(84) bytes of data.
+64 bytes from lclhrb-in-f102.1e100.net (142.250.129.102): icmp_seq=1 ttl=112 time=9.48 ms
+64 bytes from lclhrb-in-f102.1e100.net (142.250.129.102): icmp_seq=2 ttl=112 time=12.8 ms
+64 bytes from lclhrb-in-f102.1e100.net (142.250.129.102): icmp_seq=3 ttl=112 time=9.04 ms
+64 bytes from lclhrb-in-f102.1e100.net (142.250.129.102): icmp_seq=4 ttl=112 time=12.0 ms
+
+--- google.com ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3003ms
+rtt min/avg/max/mdev = 9.044/10.836/12.786/1.606 ms
+```
+
+The hostname successfully resolved to:
+
+```text
+142.250.129.102
+```
+
+Results:
+
+- 4/4 packets received
+- Packet loss: **0%**
+- Average RTT: **10.836 ms**
+
+This confirmed functioning DNS resolution and external hostname connectivity over Ethernet.
+
+**Result: PASS**
+
+---
+
+## Ethernet Validation Summary
+
+| Test | Result |
+| --- | --- |
+| Interface detected | **PASS** |
+| Physical link | **PASS** |
+| Negotiated speed | **PASS — 1000 Mb/s** |
+| Duplex | **PASS — Full** |
+| Auto-negotiation | **PASS** |
+| DHCP/IPv4 configuration | **PASS** |
+| Default route | **PASS** |
+| Gateway connectivity | **PASS — 0% loss** |
+| External IPv4 connectivity | **PASS — 0% loss** |
+| DNS resolution | **PASS** |
+
+**Overall Ethernet Result: PASS**
+
+---
+
+# Stage 5 Conclusion
+
+Stage 5 successfully validated the laptop's stability, thermals, memory, battery/power behaviour and network interfaces.
+
+The completed testing demonstrated:
+
+- Normal idle operating temperatures
+- Stable operation under full CPU load
+- CPU peak temperature of approximately 82°C during the five-minute stress test
+- Correct detection of 64 GB installed RAM
+- Successful 50 GB memory integrity test
+- No detected memory errors
+- Healthy reported battery capacity
+- Successful AC-to-battery and battery-to-AC power transfer
+- Functional Wi-Fi networking
+- Functional Gigabit Ethernet at 1000 Mb/s full duplex
+- Successful DHCP configuration
+- Successful local network connectivity
+- Successful Internet connectivity
+- Successful DNS resolution
+- No crashes, freezes or unexpected shutdowns during the completed tests
+
+**Stage 5 Result: PASS**
+
+---
+
+# Final Assessment Conclusion
+
+The initial system assessment is now complete.
+
+The investigation began with a laptop that could not locate a bootable local device and fell back to an EFI PXE network boot.
+
+Through BIOS inspection and physical hardware inspection, it was established that the laptop contained **no internal storage device**.
+
+Installation of a known-good Kingston 240 GB SATA SSD demonstrated that the laptop's SATA interface was functional and allowed the machine to boot successfully into Linux.
+
+Subsequent testing validated the major hardware required for the planned homelab deployment:
+
+- Intel Core i7-10750H — 6 cores / 12 threads
+- Intel VT-x virtualisation support
+- 64 GB DDR4 RAM
+- Kingston 240 GB SATA SSD
+- Intel Wi-Fi 6 AX200
+- Realtek Gigabit Ethernet
+- NVIDIA GeForce GTX 1650 Ti Mobile
+- Functional internal battery
+- Functional cooling system
+
+The SSD passed its SMART assessment and short self-test. The CPU completed sustained all-thread stress testing without instability. A 50 GB memory integrity test completed without detected errors. Battery power transfer operated correctly. Both Wi-Fi and wired Ethernet successfully demonstrated local network, Internet and DNS connectivity.
+
+No significant hardware fault was identified during the completed assessment.
+
+This does not guarantee that every component is fault-free or that no future hardware failure will occur. However, the completed diagnostic evidence is sufficient to proceed with the intended homelab deployment.
+
+## Final Result
+
+> **INITIAL SYSTEM ASSESSMENT: PASS**
+
+The laptop is considered suitable to proceed to the next phase of the project.
+
+## Next Phase
+
+**Linux Server Installation and Initial Configuration**
+
+The next phase will replace the temporary diagnostic environment with the server operating system and begin configuration of the laptop for headless operation, remote administration and future homelab services.
